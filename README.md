@@ -6,23 +6,6 @@ An image classification model that takes an image as an input, and predicts whet
 1. A Convolutional Neural Network (CNN) architecture was developed by our team
 2. An EfficientNet-based model architecture implemented by our team.
 
-## Team 
-|Names                  |Primary Roles                                | Secondary Roles                                   |
-| --------------------- | ------------------------------------------- | ------------------------------------------------- |
-| Farhikhta Farzan      | Data collector and cleaner                  | Model Interpreation/ Visualization and deployment |
-| Keira James           | Feature Engineer                            | Model Developer                                   |
-| Tesneem Essa          | Feature Engineer                            | Model Developer                                   |
-
-## Deployed Version
-Try the project here 🎨 !
-
-https://huggingface.co/spaces/Digital-Detectives/AI-vs-Real-Image-Detection
-
-## UI
-
-https://github.com/user-attachments/assets/04928593-8632-4411-bda0-8b1748fc2ac4
-
-
 
 ## Project Outline
 The goal of this project is to develop a deep learning model that can accurately distinguish between real images and AI-generated images. We will collect datasets of real images and fake images. The data will be preprocessed, normalized, and augmented to enhance training. Using TensorFlow and Keras, we will design a Convolutional Neural Network (CNN) for classification, and validating performance through a confusion matrix. Finally, the project will include documentation of the process, findings, and suggestions for future improvements.
