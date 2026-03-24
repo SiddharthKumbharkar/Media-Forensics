@@ -1,9 +1,33 @@
 import os
+import shutil
 import numpy as np
 import librosa
 import ffmpeg
 import tempfile
 from typing import Tuple, List
+
+try:
+    import imageio_ffmpeg  # type: ignore
+except Exception:
+    imageio_ffmpeg = None
+
+
+def _resolve_ffmpeg_binary() -> str:
+    """Find an ffmpeg executable usable by ffmpeg-python."""
+    ffmpeg_bin = shutil.which("ffmpeg")
+    if ffmpeg_bin:
+        return ffmpeg_bin
+
+    if imageio_ffmpeg is not None:
+        try:
+            return imageio_ffmpeg.get_ffmpeg_exe()
+        except Exception:
+            pass
+
+    raise ValueError(
+        "FFmpeg executable not found. Install ffmpeg (e.g., 'brew install ffmpeg') "
+        "or install Python package 'imageio-ffmpeg'."
+    )
 
 def load_audio(file_path: str, target_sr: int = 22050) -> Tuple[np.ndarray, int]:
     """
@@ -37,12 +61,13 @@ def load_audio(file_path: str, target_sr: int = 22050) -> Tuple[np.ndarray, int]
         fd, temp_wav_path = tempfile.mkstemp(suffix=".wav")
         os.close(fd)
         try:
+            ffmpeg_cmd = _resolve_ffmpeg_binary()
             (
                 ffmpeg
                 .input(file_path)
                 .output(temp_wav_path, vn=None, acodec='pcm_s16le', ac=1, ar=target_sr)
                 .overwrite_output()
-                .run(capture_stdout=True, capture_stderr=True)
+                .run(cmd=ffmpeg_cmd, capture_stdout=True, capture_stderr=True)
             )
             file_to_load = temp_wav_path
         except ffmpeg.Error as e:

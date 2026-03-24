@@ -1,4 +1,7 @@
 import os
+import sys
+import tempfile
+from pathlib import Path
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 
@@ -8,7 +11,15 @@ from layer1.prnu_extractor import extract_prnu
 from layer1.steg_detector import detect_steg
 from schemas.output_schema import Layer1Output
 
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+	sys.path.insert(0, str(PROJECT_ROOT))
+
+from audio_forensics import analyze_audio
+
 app = FastAPI(title="MediaForensics Layer 1 API")
+
+AUDIO_EXTENSIONS = {".wav", ".mp3", ".flac", ".ogg", ".m4a", ".aac", ".mp4", ".mov", ".avi", ".mkv", ".webm"}
 
 
 def _get_weights() -> tuple[float, float, float, float]:
@@ -78,3 +89,38 @@ async def analyze_image(file: UploadFile = File(...)) -> Layer1Output:
 		prnu=prnu_result,
 		layer1_score=round(float(layer1_score), 4),
 	)
+
+
+@app.post("/analyze/audio")
+async def analyze_audio_file(file: UploadFile = File(...)) -> dict:
+	file_name = file.filename or "uploaded_audio"
+	extension = Path(file_name).suffix.lower()
+
+	is_audio_content_type = bool(file.content_type and file.content_type.startswith("audio/"))
+	if not is_audio_content_type and extension not in AUDIO_EXTENSIONS:
+		raise HTTPException(status_code=400, detail="Uploaded file must be an audio file")
+
+	audio_bytes = await file.read()
+	if not audio_bytes:
+		raise HTTPException(status_code=400, detail="Empty file upload")
+
+	if extension == "":
+		extension = ".wav"
+
+	temp_file_path = ""
+	try:
+		with tempfile.NamedTemporaryFile(delete=False, suffix=extension) as temp_file:
+			temp_file.write(audio_bytes)
+			temp_file_path = temp_file.name
+
+		result = analyze_audio(temp_file_path)
+		return result
+	except ValueError as error:
+		raise HTTPException(status_code=400, detail=str(error)) from error
+	except FileNotFoundError as error:
+		raise HTTPException(status_code=400, detail=str(error)) from error
+	except Exception as error:
+		raise HTTPException(status_code=500, detail=f"Audio analysis failed: {error}") from error
+	finally:
+		if temp_file_path and os.path.exists(temp_file_path):
+			os.remove(temp_file_path)
