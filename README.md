@@ -100,31 +100,20 @@ This model demonstrates exceptional performance in identifying fake images, part
 Our project is crucial in today’s world, where AI-generated content is increasingly prevalent. This model can be used by social media platforms, news organizations, and even everyday people to verify the authenticity of images, helping to fight against misinformation and ensure the integrity of visual media.
 
 ## Set up
-1. Navigate to desired library
-```
-  cd your_directory
-```
-2. Clone repository
-```
-  git clone https://github.com/KeiraJames/CTP-Project-2024.git
-```
-3. Navigate to repo
-```
- cd CTP-Project-2024
-```
-4. Create virtual environment
+
+1. Create virtual environment
 ```
  python -m venv .aivsreal-venv
 ```
-5. Activate virtual environment (MAC)
+2. Activate virtual environment (MAC)
 ```
  source .aivsreal/bin/activate
 ```
-6. Install the requirements
+3. Install the requirements
  ```
    pip install -r requirements.txt
  ```
-7. Run streamlit
+4. Run streamlit
  ```
    streamlit run app.py
  ```
