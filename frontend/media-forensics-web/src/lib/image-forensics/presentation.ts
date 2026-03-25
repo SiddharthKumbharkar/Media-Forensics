@@ -39,6 +39,36 @@ export function getVerdictFromLayer1Score(score: number): Verdict {
   };
 }
 
+export function getVerdictFromUnifiedResult(result: Layer1Output): Verdict {
+  const verdictText = (result.verdict || "").toLowerCase();
+
+  if (verdictText.includes("likely real")) {
+    return {
+      label: "Likely Authentic",
+      tone: "success",
+      summary: "Unified forensic + ML fusion indicates this image is likely authentic.",
+    };
+  }
+
+  if (verdictText.includes("review")) {
+    return {
+      label: "Review Required",
+      tone: "warning",
+      summary: "Signals are mixed across forensic checks and ML inference. Manual review is recommended.",
+    };
+  }
+
+  if (verdictText.includes("ai") || verdictText.includes("tampered")) {
+    return {
+      label: "Likely AI/Tampered",
+      tone: "danger",
+      summary: "Unified analysis indicates elevated risk of AI generation or manipulation.",
+    };
+  }
+
+  return getVerdictFromLayer1Score(result.authenticity_score);
+}
+
 export function getSignalAgreementConfidence(result: Layer1Output): number {
   const signals = [result.metadata.exif_score, result.steganography.steg_score, result.prnu.prnu_score];
   const mean = signals.reduce((sum, value) => sum + value, 0) / signals.length;

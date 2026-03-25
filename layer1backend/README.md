@@ -38,7 +38,7 @@ cd /Volumes/Tanmay/MediaForensics/mediaforensics-backend
 python3 -m venv .venv
 source .venv/bin/activate
 pip install --upgrade pip
-pip install fastapi uvicorn python-multipart pillow numpy scipy requests
+pip install fastapi uvicorn python-multipart pillow numpy scipy requests tensorflow==2.18.0
 ```
 
 Install C2PA tool (macOS):

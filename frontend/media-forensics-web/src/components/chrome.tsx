@@ -156,19 +156,31 @@ export function SiteFooter() {
       <div className="absolute inset-0 bg-black/45" />
 
       <div className="relative z-10 flex w-full flex-col items-center justify-between gap-6 md:flex-row">
-        <span className="font-headline text-lg font-semibold italic tracking-tight text-white sm:text-xl">
-              MediaForensics
-            </span>
+        <div className="text-center md:text-left">
+          <span className="font-headline text-lg font-semibold italic tracking-tight text-white sm:text-xl">
+            MediaForensics
+          </span>
+          <p className="mt-1 text-xs uppercase tracking-[0.16em] text-white/60">
+            Analyze video, image, and audio authenticity
+          </p>
+        </div>
+
         <div className="flex flex-wrap items-center justify-center gap-5 text-xs uppercase tracking-widest text-white/70">
-          <a href="#" className="transition-colors hover:text-white">
-            API Docs
-          </a>
-          <a href="#" className="transition-colors hover:text-white">
-            Privacy
-          </a>
-          <a href="#" className="transition-colors hover:text-white">
-            Status
-          </a>
+          <NextLink href="/run" className="transition-colors hover:text-white">
+            Run Analysis
+          </NextLink>
+          <NextLink href="/about-creators" className="transition-colors hover:text-white">
+            About Creators
+          </NextLink>
+          <NextLink href="/video-forensics" className="transition-colors hover:text-white">
+            Video
+          </NextLink>
+          <NextLink href="/image-forensics" className="transition-colors hover:text-white">
+            Image
+          </NextLink>
+          <NextLink href="/audio-forensics" className="transition-colors hover:text-white">
+            Audio
+          </NextLink>
         </div>
       </div>
     </footer>

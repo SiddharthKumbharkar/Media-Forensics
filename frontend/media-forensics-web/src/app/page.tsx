@@ -1,3 +1,4 @@
+import NextLink from "next/link";
 import { Button, Card, Chip } from "@heroui/react";
 import BorderGlow from "@/components/border-glow";
 import { SiteFooter, TopNav } from "@/components/chrome";
@@ -13,8 +14,8 @@ const technologies = [
   },
   {
     title: "Deepfake Models",
-    body: "Frame-level neural models identify generation artifacts and temporal drift patterns.",
-    tags: ["Xception", "EfficientNet"],
+    body: "Integrated model inference now contributes to final authenticity scoring for image and video analysis.",
+    tags: ["EfficientNet", "CNN", "Ensemble"],
   },
   {
     title: "Audio Forensics",
@@ -60,17 +61,15 @@ export default function HomePage() {
                 forensic signal extraction, and AI-assisted anomaly detection.
               </p>
               <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-                <Button
-                  size="lg"
-                  className="rounded-full border-white/30 bg-white/5 px-10 !text-white hover:bg-white/10"
-                  variant="outline"
-                >
-                  Analyze Now
-                </Button>
-                
-                <Button size="lg" className="rounded-full px-10" variant="outline">
-                  See How It Works
-                </Button>
+                <NextLink href="/run">
+                  <Button
+                    size="lg"
+                    className="rounded-full border-white/30 bg-white/5 px-10 !text-white hover:bg-white/10"
+                    variant="outline"
+                  >
+                    Analyze Now
+                  </Button>
+                </NextLink>
               </div>
             </div>
           </section>
