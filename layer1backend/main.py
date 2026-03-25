@@ -7,6 +7,7 @@ from fastapi import FastAPI, File, HTTPException, UploadFile
 
 from layer1.c2pa_validator import validate_c2pa
 from layer1.exif_validator import validate_exif
+from layer1.ml_detector import predict_ai_image
 from layer1.prnu_extractor import extract_prnu
 from layer1.steg_detector import detect_steg
 from schemas.output_schema import Layer1Output
@@ -40,20 +41,24 @@ def _get_weights() -> tuple[float, float, float, float]:
 	)
 
 
-@app.get("/health")
-async def health_check() -> dict:
-	return {"status": "ok"}
+def _get_fusion_weights() -> tuple[float, float]:
+	w_layer1 = float(os.getenv("LAYER1_W_FORENSIC", "0.65"))
+	w_ml = float(os.getenv("LAYER1_W_ML", "0.35"))
+	total = w_layer1 + w_ml
+	if total <= 0:
+		raise ValueError("Fusion weights must sum to a positive number")
+	return (w_layer1 / total, w_ml / total)
 
 
-@app.post("/analyze/image", response_model=Layer1Output)
-async def analyze_image(file: UploadFile = File(...)) -> Layer1Output:
-	if not file.content_type or not file.content_type.startswith("image/"):
-		raise HTTPException(status_code=400, detail="Uploaded file must be an image")
+def _get_verdict(score: float) -> str:
+	if score >= 0.75:
+		return "Likely Real"
+	if score >= 0.45:
+		return "Review Required"
+	return "Likely AI/Tampered"
 
-	image_bytes = await file.read()
-	if not image_bytes:
-		raise HTTPException(status_code=400, detail="Empty file upload")
 
+def _analyze_image_bytes(image_bytes: bytes) -> Layer1Output:
 	try:
 		c2pa_result = validate_c2pa(image_bytes)
 		metadata_result = validate_exif(image_bytes)
@@ -82,13 +87,86 @@ async def analyze_image(file: UploadFile = File(...)) -> Layer1Output:
 		+ w_prnu * prnu_result["prnu_score"]
 		+ w_c2pa * c2pa_result["c2pa_score"]
 	)
+	layer1_score = max(0.0, min(1.0, float(layer1_score)))
+
+	image_temp_path = ""
+	try:
+		with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as temp_image:
+			temp_image.write(image_bytes)
+			image_temp_path = temp_image.name
+
+		ml_prediction = predict_ai_image(image_temp_path)
+	except FileNotFoundError as error:
+		raise HTTPException(status_code=500, detail=str(error)) from error
+	except Exception as error:
+		raise HTTPException(status_code=500, detail=f"ML image analysis failed: {error}") from error
+	finally:
+		if image_temp_path and os.path.exists(image_temp_path):
+			os.remove(image_temp_path)
+
+	ml_real_score = (
+		ml_prediction["confidence"]
+		if ml_prediction["label"] == "Real"
+		else (1.0 - ml_prediction["confidence"])
+	)
+
+	try:
+		w_forensic, w_ml = _get_fusion_weights()
+	except ValueError as error:
+		raise HTTPException(status_code=500, detail=str(error)) from error
+
+	authenticity_score = (w_forensic * layer1_score) + (w_ml * ml_real_score)
+	authenticity_score = max(0.0, min(1.0, float(authenticity_score)))
+	verdict = _get_verdict(authenticity_score)
 
 	return Layer1Output(
+		authenticity_score=round(authenticity_score, 4),
+		verdict=verdict,
+		ml_prediction=ml_prediction,
+		forensic_signals={
+			"c2pa": c2pa_result,
+			"exif_score": metadata_result["exif_score"],
+			"steg_score": steg_result["steg_score"],
+			"prnu_score": prnu_result["prnu_score"],
+			"exif_consistent": metadata_result["exif_consistent"],
+			"lsb_anomaly": steg_result["lsb_anomaly"],
+			"dct_anomaly": steg_result["dct_anomaly"],
+		},
+		c2pa=c2pa_result,
 		metadata=metadata_result,
 		steganography=steg_result,
 		prnu=prnu_result,
-		layer1_score=round(float(layer1_score), 4),
+		layer1_score=round(layer1_score, 4),
 	)
+
+
+@app.get("/health")
+async def health_check() -> dict:
+	return {"status": "ok"}
+
+
+@app.post("/analyze/image", response_model=Layer1Output)
+async def analyze_image(file: UploadFile = File(...)) -> Layer1Output:
+	if not file.content_type or not file.content_type.startswith("image/"):
+		raise HTTPException(status_code=400, detail="Uploaded file must be an image")
+
+	image_bytes = await file.read()
+	if not image_bytes:
+		raise HTTPException(status_code=400, detail="Empty file upload")
+
+	return _analyze_image_bytes(image_bytes)
+
+
+@app.post("/detect", response_model=Layer1Output)
+async def detect_image(file: UploadFile = File(...)) -> Layer1Output:
+	if not file.content_type or not file.content_type.startswith("image/"):
+		raise HTTPException(status_code=400, detail="Uploaded file must be an image")
+
+	image_bytes = await file.read()
+	if not image_bytes:
+		raise HTTPException(status_code=400, detail="Empty file upload")
+
+	return _analyze_image_bytes(image_bytes)
 
 
 @app.post("/analyze/audio")

@@ -9,7 +9,7 @@ import { analyzeImageFile } from "@/lib/image-forensics/api";
 import {
   formatFixed,
   getSignalAgreementConfidence,
-  getVerdictFromLayer1Score,
+  getVerdictFromUnifiedResult,
   toPercent,
 } from "@/lib/image-forensics/presentation";
 import type { Layer1Output } from "@/lib/image-forensics/types";
@@ -48,9 +48,9 @@ export default function ImageForensicsPage() {
     [previewUrl],
   );
 
-  const scorePercent = result ? toPercent(result.layer1_score) : 0;
+  const scorePercent = result ? toPercent(result.authenticity_score) : 0;
   const aiRiskPercent = result ? 100 - scorePercent : 0;
-  const verdict = result ? getVerdictFromLayer1Score(result.layer1_score) : null;
+  const verdict = result ? getVerdictFromUnifiedResult(result) : null;
   const confidencePercent = result ? toPercent(getSignalAgreementConfidence(result)) : 0;
 
   const signalCards: SignalCard[] = useMemo(() => {
@@ -188,7 +188,7 @@ export default function ImageForensicsPage() {
                   <div className="absolute inset-0 flex items-center justify-center bg-black/45">
                     <div className="flex items-center gap-3 rounded-full border border-white/20 bg-black/60 px-4 py-2 text-white">
                       <Spinner size="sm" />
-                      <span className="text-sm">Running forensic checks...</span>
+                      <span className="text-sm">Running image forensic checks...</span>
                     </div>
                   </div>
                 ) : null}
@@ -205,7 +205,7 @@ export default function ImageForensicsPage() {
                 ) : null}
               </div>
               <Card.Footer className="flex justify-between text-xs uppercase tracking-[0.16em] text-white/45">
-                <span>Pipeline: EXIF + Steg + PRNU + C2PA</span>
+                <span>Pipeline: EXIF + Steg + PRNU + C2PA + EfficientNet</span>
                 <span>Processing: {formatDuration(result?.processing_ms)}</span>
               </Card.Footer>
             </Card>
@@ -238,7 +238,7 @@ export default function ImageForensicsPage() {
                 </div>
                 <div>
                   <p className="text-xs uppercase tracking-[0.18em] text-white/45">
-                    Authenticity Confidence (Higher = More Likely Real)
+                    Unified Authenticity Confidence (Forensics + ML)
                   </p>
                   <div className="mt-1 flex items-center gap-2">
                     <p className="text-3xl italic text-white">{verdict?.label || "Awaiting Upload"}</p>
@@ -272,6 +272,38 @@ export default function ImageForensicsPage() {
                 </Card>
               ))}
             </div>
+
+            <Card className="border border-white/10 p-6" variant="secondary">
+              <Card.Title className="text-sm uppercase tracking-[0.16em] text-white/60">AI Model Analysis</Card.Title>
+              <Card.Content className="space-y-3 pt-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs uppercase tracking-[0.16em] text-white/45">Model</span>
+                  <span className="text-sm text-white">{result?.ml_prediction.model || "EfficientNet"}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs uppercase tracking-[0.16em] text-white/45">Label</span>
+                  <Chip
+                    color={
+                      result
+                        ? result.ml_prediction.label === "Real"
+                          ? "success"
+                          : "danger"
+                        : "warning"
+                    }
+                    size="sm"
+                    variant="soft"
+                  >
+                    {result ? result.ml_prediction.label : "Pending"}
+                  </Chip>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs uppercase tracking-[0.16em] text-white/45">Confidence</span>
+                  <span className="text-sm text-white">
+                    {result ? `${toPercent(result.ml_prediction.confidence)}%` : "-"}
+                  </span>
+                </div>
+              </Card.Content>
+            </Card>
           </div>
           </section>
         </ScrollReveal>
@@ -288,6 +320,14 @@ export default function ImageForensicsPage() {
                     <Table.Column>Value</Table.Column>
                   </Table.Header>
                   <Table.Body>
+                    <Table.Row>
+                      <Table.Cell>Verdict</Table.Cell>
+                      <Table.Cell>{result ? result.verdict : "-"}</Table.Cell>
+                    </Table.Row>
+                    <Table.Row>
+                      <Table.Cell>Authenticity Score</Table.Cell>
+                      <Table.Cell>{result ? formatFixed(result.authenticity_score, 4) : "-"}</Table.Cell>
+                    </Table.Row>
                     <Table.Row>
                       <Table.Cell>Layer1 Score</Table.Cell>
                       <Table.Cell>{result ? formatFixed(result.layer1_score, 4) : "-"}</Table.Cell>
@@ -315,6 +355,22 @@ export default function ImageForensicsPage() {
                     <Table.Row>
                       <Table.Cell>Spatial Correlation</Table.Cell>
                       <Table.Cell>{result ? formatFixed(result.prnu.spatial_correlation, 6) : "-"}</Table.Cell>
+                    </Table.Row>
+                    <Table.Row>
+                      <Table.Cell>ML Label</Table.Cell>
+                      <Table.Cell>{result ? result.ml_prediction.label : "-"}</Table.Cell>
+                    </Table.Row>
+                    <Table.Row>
+                      <Table.Cell>ML Confidence</Table.Cell>
+                      <Table.Cell>{result ? `${toPercent(result.ml_prediction.confidence)}%` : "-"}</Table.Cell>
+                    </Table.Row>
+                    <Table.Row>
+                      <Table.Cell>C2PA Score</Table.Cell>
+                      <Table.Cell>{result ? formatFixed(result.c2pa.c2pa_score, 4) : "-"}</Table.Cell>
+                    </Table.Row>
+                    <Table.Row>
+                      <Table.Cell>C2PA Note</Table.Cell>
+                      <Table.Cell>{result ? result.c2pa.note : "-"}</Table.Cell>
                     </Table.Row>
                     <Table.Row>
                       <Table.Cell>Physics Violations</Table.Cell>
