@@ -1,3 +1,5 @@
+"use client";
+
 import NextLink from "next/link";
 import { Button, Card } from "@heroui/react";
 import { SiteFooter, TopNav } from "@/components/chrome";

@@ -1,7 +1,10 @@
+"use client";
+
 import NextLink from "next/link";
 import { Button, Card } from "@heroui/react";
 import { SiteFooter, TopNav } from "@/components/chrome";
 import { ScrollReveal } from "@/components/scroll-reveal";
+import BorderGlow from "@/components/border-glow";
 
 const creators = [
   {
@@ -34,6 +37,18 @@ const creators = [
   },
 ] as const;
 
+const cardGlowProps = {
+  edgeSensitivity: 30,
+  glowColor: "60 100 120",
+  backgroundColor: "#050505",
+  borderRadius: 24,
+  glowRadius: 40,
+  glowIntensity: 1.2,
+  coneSpread: 30,
+  animated: true,
+  colors: ["#38bdf8", "#818cf8", "#c084fc"],
+};
+
 export default function AboutCreatorsPage() {
   return (
     <>
@@ -55,29 +70,45 @@ export default function AboutCreatorsPage() {
 
         <ScrollReveal delayMs={60}>
           <section className="mx-auto grid w-full max-w-6xl gap-5 md:grid-cols-2">
-            {creators.map((creator) => (
-              <Card key={creator.name} className="border border-white/10 p-6" variant="secondary">
-                <Card.Header className="flex-col items-start gap-3">
-                  <Card.Title className="text-2xl text-white">{creator.name}</Card.Title>
-                  <Card.Description className="text-white/70">{creator.role}</Card.Description>
-                </Card.Header>
-                <Card.Content className="space-y-4 pt-3 text-sm text-white/75">
-                  <p>{creator.bio}</p>
+            {creators.map((creator, idx) => (
+              <ScrollReveal key={creator.name} delayMs={100 + idx * 50}>
+                <BorderGlow {...cardGlowProps}>
+                  <Card className="liquid-glass h-full border border-white/10 p-6" variant="secondary">
+                    <Card.Header className="flex-col items-start gap-1">
+                      <Card.Title className="text-2xl font-headline italic text-white">
+                        {creator.name}
+                      </Card.Title>
+                      <Card.Description className="text-xs uppercase tracking-widest text-sky-400">
+                        {creator.role}
+                      </Card.Description>
+                    </Card.Header>
+                    <Card.Content className="space-y-4 pt-3 text-sm text-white/75">
+                      <p className="leading-relaxed">{creator.bio}</p>
 
-                  <div className="flex flex-wrap gap-2">
-                    <NextLink href={creator.github} target="_blank" rel="noopener noreferrer">
-                      <Button size="sm" variant="outline" className="rounded-full">
-                        GitHub
-                      </Button>
-                    </NextLink>
-                    <NextLink href={creator.linkedin} target="_blank" rel="noopener noreferrer">
-                      <Button size="sm" variant="outline" className="rounded-full">
-                        LinkedIn
-                      </Button>
-                    </NextLink>
-                  </div>
-                </Card.Content>
-              </Card>
+                      <div className="flex flex-wrap gap-2 pt-2">
+                        <NextLink href={creator.github} target="_blank" rel="noopener noreferrer">
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="rounded-full border-white/20 bg-white/5 hover:bg-white/10"
+                          >
+                            GitHub
+                          </Button>
+                        </NextLink>
+                        <NextLink href={creator.linkedin} target="_blank" rel="noopener noreferrer">
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="rounded-full border-white/20 bg-white/5 hover:bg-white/10"
+                          >
+                            LinkedIn
+                          </Button>
+                        </NextLink>
+                      </div>
+                    </Card.Content>
+                  </Card>
+                </BorderGlow>
+              </ScrollReveal>
             ))}
           </section>
         </ScrollReveal>

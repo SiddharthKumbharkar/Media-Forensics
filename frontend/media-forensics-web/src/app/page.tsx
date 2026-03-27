@@ -1,3 +1,5 @@
+"use client";
+
 import NextLink from "next/link";
 import { Button, Card, Chip } from "@heroui/react";
 import BorderGlow from "@/components/border-glow";

@@ -124,7 +124,8 @@ last_used_time: float = 0.0
 
 
 class VideoInput(BaseModel):
-    video_data: str = Field(..., description="Base64 encoded video data string")
+    video_data: Optional[str] = Field(None, description="Base64 encoded video data string")
+    file_path: Optional[str] = Field(None, description="Absolute file path pointing to the shared volume media.")
     threshold: Optional[float] = Field(
         0.5,
         ge=0.0,
@@ -293,6 +294,34 @@ def unload_model_if_idle():
             logger.info("Model unloaded.")
 
 
+def extract_frames_from_video_file(
+    video_path: str, num_frames_to_sample: int
+) -> List[np.ndarray]:
+    frames = []
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        logger.error(f"Failed to open video file: {video_path}")
+        return frames
+
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    if total_frames == 0:
+        cap.release()
+        return frames
+
+    frame_indices = np.linspace(
+        0, total_frames - 1, num_frames_to_sample, dtype=int
+    )
+
+    for idx in frame_indices:
+        cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
+        ret, frame = cap.read()
+        if ret:
+            frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+
+    cap.release()
+    return frames
+
+
 def extract_frames_from_video_bytes(
     video_bytes: bytes, num_frames_to_sample: int
 ) -> List[np.ndarray]:
@@ -335,7 +364,7 @@ def extract_frames_from_video_bytes(
 
 
 def process_video_and_predict(
-    video_bytes: bytes, input_threshold: float, variant_to_load: str
+    video_bytes: Optional[bytes], video_path: Optional[str], input_threshold: float, variant_to_load: str
 ) -> Tuple[float, int, str]:
     ensure_model_loaded(variant_to_load)
     if not all(
@@ -351,9 +380,17 @@ def process_video_and_predict(
             detail=f"Model or preprocessor for '{variant_to_load}' not available.",
         )
 
-    frames_rgb = extract_frames_from_video_bytes(
-        video_bytes, FRAMES_PER_VIDEO_TO_SAMPLE
-    )
+    if video_path and os.path.exists(video_path):
+        frames_rgb = extract_frames_from_video_file(video_path, FRAMES_PER_VIDEO_TO_SAMPLE)
+    elif video_bytes:
+        frames_rgb = extract_frames_from_video_bytes(
+            video_bytes, FRAMES_PER_VIDEO_TO_SAMPLE
+        )
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail="Either video_data or a valid file_path must be provided.",
+        )
     if not frames_rgb:
         logger.warning("No frames extracted from video.")
         return 0.5, 0, "real"
@@ -596,10 +633,15 @@ async def unload_model_endpoint():
 async def predict_video(input_data: VideoInput):
     req_start_time = time.time()
     try:
-        video_bytes = base64.b64decode(input_data.video_data)
+        video_bytes = None
+        video_path = input_data.file_path
+        if input_data.video_data:
+            video_bytes = base64.b64decode(input_data.video_data)
+        elif not video_path:
+            raise HTTPException(status_code=400, detail="Must provide video_data or file_path")
 
         prob_fake, pred_class_idx, class_label = process_video_and_predict(
-            video_bytes, input_data.threshold, input_data.model_variant
+            video_bytes=video_bytes, video_path=video_path, input_threshold=input_data.threshold, variant_to_load=input_data.model_variant
         )
 
         inference_time = time.time() - req_start_time

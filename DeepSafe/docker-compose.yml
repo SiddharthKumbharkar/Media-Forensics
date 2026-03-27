@@ -5,11 +5,12 @@ services:
     build: ./api
     container_name: deepsafe-api
     ports:
-      - "8000:8000"
+      - "8001:8000"
     restart: unless-stopped
     volumes:
       - ./api/meta_model_artifacts:/app/meta_model_artifacts:ro
       - ./config/deepsafe_config.json:/app/config/deepsafe_config.json:ro
+      - shared_uploads:/app/shared_uploads
     environment:
       - PORT=8000
       - META_MODEL_ARTIFACTS_DIR=/app/meta_model_artifacts
@@ -34,6 +35,8 @@ services:
       - PRELOAD_MODEL=false
       - MODEL_TIMEOUT=600
       - USE_GPU=false
+    volumes:
+      - shared_uploads:/app/shared_uploads
     networks:
       - deepsafe-network
 
@@ -78,6 +81,8 @@ services:
       - PRELOAD_MODEL=false
       - MODEL_TIMEOUT=600
       - USE_GPU=false
+    volumes:
+      - shared_uploads:/app/shared_uploads
     networks:
       - deepsafe-network
 
@@ -142,6 +147,8 @@ services:
       # - CROSS_EFFICIENT_VIT_CONFIG_PATH="/app/model_code/cross-efficient-vit/configs/architecture.yaml"
       # - EFFICIENT_VIT_CONFIG_PATH="/app/model_code/efficient-vit/configs/architecture.yaml"
       # - FRAMES_PER_VIDEO="15" # If you want to control frame sampling from docker-compose
+    volumes:
+      - shared_uploads:/app/shared_uploads
     networks:
       - deepsafe-network
     # Optional: Add resource limits for CPU/memory if this model is resource-intensive
@@ -176,3 +183,6 @@ services:
 networks:
   deepsafe-network:
     driver: bridge
+
+volumes:
+  shared_uploads:

@@ -5,13 +5,14 @@ import NextLink from "next/link";
 import { Button, Link, Surface } from "@heroui/react";
 import { FooterStreamVideo } from "@/components/footer-stream-video";
 
-type NavKey = "home" | "video" | "image" | "audio";
+type NavKey = "home" | "video" | "image" | "audio" | "history";
 
 const navItems: Array<{ href: string; key: NavKey; label: string }> = [
   { key: "home", href: "/", label: "Home" },
   { key: "video", href: "/video-forensics", label: "Video" },
   { key: "image", href: "/image-forensics", label: "Image" },
   { key: "audio", href: "/audio-forensics", label: "Audio" },
+  { key: "history", href: "/history", label: "History" },
 ];
 
 export function TopNav({ active, overlay = false }: { active: NavKey; overlay?: boolean }) {
@@ -180,6 +181,9 @@ export function SiteFooter() {
           </NextLink>
           <NextLink href="/audio-forensics" className="transition-colors hover:text-white">
             Audio
+          </NextLink>
+          <NextLink href="/history" className="transition-colors hover:text-white">
+            History
           </NextLink>
         </div>
       </div>

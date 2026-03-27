@@ -89,9 +89,8 @@ from pydantic import BaseModel, Field, ConfigDict  # Add ConfigDict if needed
 
 
 class ImageInput(BaseModel):
-    image_data: str = Field(
-        ..., description="Base64 encoded image string"
-    )  # Renamed field
+    image_data: Optional[str] = Field(None, description="Base64 encoded image string")
+    file_path: Optional[str] = Field(None, description="Absolute file path pointing to the shared volume media.")
     threshold: Optional[float] = Field(
         0.5, ge=0.0, le=1.0, description="Classification threshold"
     )
@@ -182,9 +181,12 @@ def unload_model_if_idle():
             logger.info(f"{MODEL_NAME} model unloaded and memory cleared.")
 
 
-def preprocess_image(image_bytes: bytes) -> torch.Tensor:
+def preprocess_image(image_source: Any) -> torch.Tensor:
     try:
-        image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+        if isinstance(image_source, bytes):
+            image = Image.open(io.BytesIO(image_source)).convert("RGB")
+        else:
+            image = Image.open(image_source).convert("RGB")
         preprocess = transforms.Compose(
             [
                 transforms.Resize((256, 256)),
@@ -326,8 +328,15 @@ async def predict_image_endpoint(input_data: ImageInput):
             )
 
         start_time_pred = time.time()
-        image_bytes = base64.b64decode(input_data.image_data)
-        image_tensor = preprocess_image(image_bytes)
+        
+        if input_data.file_path and os.path.exists(input_data.file_path):
+            image_tensor = preprocess_image(input_data.file_path)
+        elif input_data.image_data:
+            image_bytes = base64.b64decode(input_data.image_data)
+            image_tensor = preprocess_image(image_bytes)
+        else:
+            raise HTTPException(status_code=400, detail="Must provide image_data or file_path")
+            
         image_tensor = image_tensor.to(DEVICE)
 
         with torch.no_grad():

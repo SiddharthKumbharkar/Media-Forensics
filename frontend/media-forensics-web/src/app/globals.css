@@ -4,6 +4,8 @@
 :root {
   --background: #000000;
   --foreground: #e2e2e2;
+  --font-body: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
+  --font-headline: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
 }
 
 @theme inline {

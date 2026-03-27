@@ -40,6 +40,7 @@ export interface ForensicSignals {
 }
 
 export interface Layer1Output {
+  request_id?: string;
   authenticity_score: number;
   verdict: string;
   ml_prediction: MLPrediction;

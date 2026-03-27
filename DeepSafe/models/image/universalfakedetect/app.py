@@ -65,7 +65,8 @@ from typing import Optional
 
 
 class ImageInput(BaseModel):
-    image_data: str  # Renamed field
+    image_data: Optional[str] = None
+    file_path: Optional[str] = None
     threshold: Optional[float] = 0.5
 
 
@@ -248,10 +249,13 @@ def unload_model_if_idle():
 
 
 # Preprocess image for inference
-def preprocess_image(image_bytes):
+def preprocess_image(image_source: Any):
     try:
         # Read the image
-        image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+        if isinstance(image_source, bytes):
+            image = Image.open(io.BytesIO(image_source)).convert("RGB")
+        else:
+            image = Image.open(image_source).convert("RGB")
 
         # Preprocess image
         from torchvision import transforms
@@ -356,19 +360,21 @@ async def predict_image(input_data: ImageInput) -> Dict[str, Any]:
             # Update timestamp if already loaded
             last_used_time = time.time()
 
-        # Decode base64 image
-        image_bytes = base64.b64decode(input_data.image_data)
-
         # Start timing
         start_time = time.time()
+
+        if input_data.file_path and os.path.exists(input_data.file_path):
+            image_tensor = preprocess_image(input_data.file_path)
+        elif input_data.image_data:
+            image_bytes = base64.b64decode(input_data.image_data)
+            image_tensor = preprocess_image(image_bytes)
+        else:
+            raise HTTPException(status_code=400, detail="Must provide image_data or file_path")
 
         # Optimize memory during inference
         if USE_GPU:
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
-
-        # Preprocess the image
-        image_tensor = preprocess_image(image_bytes)
 
         # Get predictions
         results = predict(image_tensor, input_data.threshold)

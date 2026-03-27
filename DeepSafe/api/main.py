@@ -18,7 +18,6 @@ Driven by `deepsafe_config.json`, allowing for dynamic registration of new model
 
 import os
 import time
-import base64
 import requests
 import logging
 from typing import Dict, Any, List, Optional, Union, Tuple
@@ -409,6 +408,9 @@ class PredictInput(BaseModel):
     audio_data: Optional[str] = Field(
         None, description="Base64 encoded audio data (if media_type is 'audio')"
     )
+    file_path: Optional[str] = Field(
+        None, description="Absolute file path pointing to the shared_uploads volume bounding media."
+    )
 
     models: Optional[List[str]] = Field(
         None, description="List of specific models to use for this media_type."
@@ -433,6 +435,9 @@ class PredictInput(BaseModel):
 
     @model_validator(mode="after")
     def check_media_data_consistency(self) -> "PredictInput":
+        if self.file_path:
+            return self
+
         media_type = self.media_type
 
         expected_payload_key = MEDIA_TYPE_PAYLOAD_KEYS.get(media_type)
@@ -547,7 +552,8 @@ def check_model_health_api(model_name: str, media_type: str) -> Dict[str, Any]:
 def query_model_api(
     model_name: str,
     media_type: str,
-    encoded_media_data: str,
+    encoded_media_data: Optional[str],
+    file_path: Optional[str],
     threshold: float,
     request_id: str,
 ) -> Dict[str, Any]:
@@ -567,16 +573,19 @@ def query_model_api(
         f"Request {request_id}: Querying model '{model_name}' ({media_type}) at {model_predict_url}."
     )
 
-    payload_key = MEDIA_TYPE_PAYLOAD_KEYS.get(media_type)
-    if not payload_key:
-        logger.error(
-            f"Request {request_id}: No payload key defined for media type '{media_type}' for model '{model_name}'."
-        )
-        return {
-            "error": f"Internal configuration error: Payload key not defined for media type '{media_type}'."
-        }
-
-    payload = {payload_key: encoded_media_data, "threshold": threshold}
+    payload = {"threshold": threshold}
+    if file_path:
+        payload["file_path"] = file_path
+    elif encoded_media_data:
+        payload_key = MEDIA_TYPE_PAYLOAD_KEYS.get(media_type)
+        if not payload_key:
+            logger.error(
+                f"Request {request_id}: No payload key defined for media type '{media_type}' for model '{model_name}'."
+            )
+            return {
+                "error": f"Internal configuration error: Payload key not defined for media type '{media_type}'."
+            }
+        payload[payload_key] = encoded_media_data
 
     for attempt in range(MAX_RETRIES + 1):
         try:
@@ -955,7 +964,7 @@ async def predict_media_endpoint_api(request: Request, input_data: PredictInput)
             }
             continue
         model_query_results[model_name] = query_model_api(
-            model_name, media_type, encoded_media_content, input_data.threshold, req_id
+            model_name, media_type, encoded_media_content, input_data.file_path, input_data.threshold, req_id
         )
 
     if not any("error" not in r_data for r_data in model_query_results.values()):
@@ -1031,17 +1040,6 @@ async def predict_media_endpoint_api(request: Request, input_data: PredictInput)
     logger.info(
         f"Request {req_id} ({media_type}): Prediction complete in {total_processing_time:.2f}s. Verdict: '{verdict}', P(Fake): {ensemble_prob_fake:.4f} (Method: '{actual_method_used}')"
     )
-    print_results_summary_table_api(
-        req_id,
-        media_type,
-        actual_method_used,
-        verdict,
-        ensemble_prob_fake,
-        model_query_results,
-        input_data.threshold,
-    )
-    return response_payload
-
     print_results_summary_table_api(
         req_id,
         media_type,
@@ -1187,24 +1185,22 @@ async def detect_media_endpoint_api_form(
                     detail=f"Error processing image file '{file.filename}': {e_img_gen}",
                 )
 
-        base64_media = base64.b64encode(file_contents).decode("utf-8")
         parsed_models_list = (
             [m.strip() for m in models.split(",") if m.strip()] if models else None
         )
+
+        os.makedirs("/app/shared_uploads", exist_ok=True)
+        shared_file_path = f"/app/shared_uploads/{req_id}_{file.filename}"
+        with open(shared_file_path, "wb") as shared_f:
+            shared_f.write(file_contents)
 
         predict_payload_data = {
             "media_type": inferred_media_type,
             "threshold": final_threshold,
             "ensemble_method": final_ensemble_method,
             "models": parsed_models_list,
+            "file_path": shared_file_path,
         }
-        payload_key_for_media_data = MEDIA_TYPE_PAYLOAD_KEYS.get(inferred_media_type)
-        if not payload_key_for_media_data:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Internal server error: media type key mapping failed.",
-            )
-        predict_payload_data[payload_key_for_media_data] = base64_media
 
         predict_input_object = PredictInput(**predict_payload_data)
         full_prediction_result = await predict_media_endpoint_api(
@@ -1253,6 +1249,11 @@ async def detect_media_endpoint_api_form(
             detail=f"An unexpected error occurred processing your file: {str(e)}",
         )
     finally:
+        if "shared_file_path" in locals() and os.path.exists(shared_file_path):
+            try:
+                os.remove(shared_file_path)
+            except Exception as ef:
+                logger.error(f"Failed cleaning up {shared_file_path}: {ef}")
         if "file" in locals() and file:
             await file.close()
 
@@ -1264,7 +1265,6 @@ async def get_analysis_history(
     offset: int = 0,
     media_type: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
 ):
     """Retrieve analysis history with pagination and filtering."""
     query = db.query(AnalysisHistory)
@@ -1301,7 +1301,6 @@ async def get_analysis_history(
 async def get_analysis_by_id(
     request_id: str,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
 ):
     """Retrieve a specific analysis result by request ID."""
     record = (
