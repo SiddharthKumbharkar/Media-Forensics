@@ -1,0 +1,68 @@
+{
+  "records": [
+    {
+      "id": 1774611982404,
+      "request_id": "ima_00f0192af390",
+      "media_type": "image",
+      "verdict": "Likely AI/Tampered",
+      "confidence": 0.0804,
+      "timestamp": "2026-03-27T11:46:22.398Z",
+      "raw": {
+        "media_type": "image",
+        "verdict": "Likely AI/Tampered",
+        "confidence": 0.0804,
+        "request_id": "ima_00f0192af390",
+        "result": {
+          "authenticity_score": 0.0804,
+          "verdict": "Likely AI/Tampered",
+          "ml_prediction": {
+            "label": "AI",
+            "confidence": 0.9803,
+            "model": "EfficientNet"
+          },
+          "forensic_signals": {
+            "c2pa": {
+              "c2pa_present": false,
+              "c2pa_verified": false,
+              "c2pa_score": 0.2,
+              "note": "No C2PA markers found (heuristic fallback)"
+            },
+            "exif_score": 0,
+            "steg_score": 0,
+            "prnu_score": 0.2921,
+            "exif_consistent": false,
+            "lsb_anomaly": true,
+            "dct_anomaly": true
+          },
+          "c2pa": {
+            "c2pa_present": false,
+            "c2pa_verified": false,
+            "c2pa_score": 0.2,
+            "note": "No C2PA markers found (heuristic fallback)"
+          },
+          "metadata": {
+            "exif_consistent": false,
+            "physics_violations": [
+              "No EXIF metadata found",
+              "No C2PA provenance marker found"
+            ],
+            "exif_score": 0
+          },
+          "steganography": {
+            "lsb_anomaly": true,
+            "dct_anomaly": true,
+            "steg_score": 0
+          },
+          "prnu": {
+            "noise_variance": 0.001156,
+            "spatial_correlation": -0.05431,
+            "prnu_score": 0.2921
+          },
+          "layer1_score": 0.113,
+          "processing_ms": 516
+        },
+        "timestamp": "2026-03-27T11:46:22.398Z"
+      }
+    }
+  ]
+}

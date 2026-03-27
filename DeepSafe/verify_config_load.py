@@ -16,10 +16,10 @@ def verify_config():
     video_models = cm.get_model_endpoints("video")
     print(f"Configured Video Models: {list(video_models.keys())}")
 
-    if "fake_stormer" in video_models:
-        print("SUCCESS: 'fake_stormer' is found in video models configuration.")
+    if "cross_efficient_vit" in video_models:
+        print("SUCCESS: 'cross_efficient_vit' is found in video models configuration.")
     else:
-        print("FAILURE: 'fake_stormer' NOT found in video models configuration.")
+        print("FAILURE: 'cross_efficient_vit' NOT found in video models configuration.")
 
 
 if __name__ == "__main__":

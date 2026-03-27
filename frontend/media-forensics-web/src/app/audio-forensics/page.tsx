@@ -1,15 +1,24 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
-import { Avatar, Button, Card, Chip, ProgressBar, Spinner } from "@heroui/react";
+import { Button, Card, Chip, ProgressBar, Spinner } from "@heroui/react";
 import { SiteFooter, TopNav } from "@/components/chrome";
 import { ScrollReveal } from "@/components/scroll-reveal";
 import { analyzeAudioFile } from "@/lib/audio-forensics/api";
+import { createClientReportId, persistHistoryEntry } from "@/lib/history-client";
+import { useLoadingMessages } from "@/hooks/use-loading-messages";
 import { formatFixed, getVerdictView, toPercent, type Tone } from "@/lib/audio-forensics/presentation";
 import type { AudioForensicsResult } from "@/lib/audio-forensics/types";
 
 const DEFAULT_WAVE_HEIGHTS = [8, 14, 26, 18, 34, 22, 40, 34, 42, 30, 38, 22, 26, 14, 10, 18, 32, 24, 36, 28, 34, 20];
 const SUPPORTED_AUDIO_EXTENSIONS = new Set([".wav", ".mp3", ".flac", ".ogg", ".m4a", ".aac", ".mp4", ".mov", ".avi", ".mkv", ".webm"]);
+const AUDIO_LOADING_MESSAGES = [
+  "Loading waveform and speech segments...",
+  "Checking ENF consistency...",
+  "Analyzing prosody and glottal signatures...",
+  "Inspecting room-acoustic transitions...",
+  "Compiling audio forensics report...",
+];
 
 interface TimelineEvent {
   id: string;
@@ -102,11 +111,13 @@ export default function AudioForensicsPage() {
   const [selectedFileName, setSelectedFileName] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
+  const [reportId, setReportId] = useState<string>("");
   const [playbackTime, setPlaybackTime] = useState(0);
   const [audioDurationSec, setAudioDurationSec] = useState(0);
   const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
   const [waveHeights, setWaveHeights] = useState<number[]>(DEFAULT_WAVE_HEIGHTS);
   const [result, setResult] = useState<AudioForensicsResult | null>(null);
+  const loadingMessage = useLoadingMessages(isLoading, AUDIO_LOADING_MESSAGES);
 
   useEffect(
     () => () => {
@@ -220,10 +231,7 @@ export default function AudioForensicsPage() {
     inputRef.current?.click();
   };
 
-  const handleAudioPick = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
+  const processFile = async (file: File, inputElement?: HTMLInputElement) => {
     if (!isSupportedAudio(file)) {
       setErrorMessage("Unsupported format. Please upload WAV, MP3, FLAC, OGG, M4A, AAC, or video files like MP4/MOV/WEBM.");
       return;
@@ -238,6 +246,7 @@ export default function AudioForensicsPage() {
     setSelectedEvent(null);
     setAudioDurationSec(0);
     setErrorMessage("");
+    setReportId("");
     setResult(null);
     setIsLoading(true);
 
@@ -246,15 +255,42 @@ export default function AudioForensicsPage() {
         analyzeAudioFile(file),
         buildWaveformFromFile(file).catch(() => DEFAULT_WAVE_HEIGHTS),
       ]);
+      const nextReportId = createClientReportId("audio");
       setResult(analysis);
+      setReportId(nextReportId);
       setWaveHeights(waveform);
+
+      void persistHistoryEntry({
+        media_type: "audio",
+        verdict: analysis.final_verdict,
+        confidence: analysis.authenticity_score,
+        request_id: nextReportId,
+        result: analysis,
+      }).catch(() => {
+        // Non-fatal: history persistence is best-effort in dev
+      });
     } catch (error) {
       setWaveHeights(DEFAULT_WAVE_HEIGHTS);
       setErrorMessage(error instanceof Error ? error.message : "Audio analysis failed");
     } finally {
       setIsLoading(false);
-      event.target.value = "";
+      if (inputElement) inputElement.value = "";
     }
+  };
+
+  const handleAudioPick = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) processFile(file, event.target);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (file) processFile(file);
   };
 
   const getWaveBarClassName = (idx: number): string => {
@@ -292,7 +328,12 @@ export default function AudioForensicsPage() {
 
                         <ScrollReveal delayMs={40}>
                           <section className="mb-16">
-                            <Card className="liquid-glass mx-auto w-full max-w-4xl border border-dashed border-white/20 p-6 text-center sm:p-8 md:p-10" variant="secondary">
+                            <Card 
+                              className="liquid-glass mx-auto w-full max-w-4xl border border-dashed border-white/20 p-6 text-center sm:p-8 md:p-10 transition-colors hover:border-white/40" 
+                              variant="secondary"
+                              onDragOver={handleDragOver}
+                              onDrop={handleDrop}
+                            >
                               <Card.Header className="items-center gap-3">
                                 <Card.Title className="text-xl text-white sm:text-2xl">Drag &amp; Drop the audio</Card.Title>
                                 <Card.Description className="text-white/60">Supported formats: MP3, WAV, FLAC, OGG, M4A, AAC, MP4, MOV, AVI, MKV, WEBM</Card.Description>
@@ -306,7 +347,7 @@ export default function AudioForensicsPage() {
                                   onChange={handleAudioPick}
                                 />
                                 <Button size="lg" className="rounded-full px-10" onPress={handleUploadClick} isDisabled={isLoading}>
-                                  {isLoading ? "Analyzing..." : "Upload Audio"}
+                                  {isLoading ? loadingMessage : "Upload Audio"}
                                 </Button>
                                 <Chip size="sm" variant="secondary">{selectedFileName || "No file selected"}</Chip>
                               </Card.Footer>
@@ -384,7 +425,7 @@ export default function AudioForensicsPage() {
                                   {isLoading ? (
                                     <div className="flex items-center gap-2 text-sm text-white/70">
                                       <Spinner size="sm" />
-                                      Running ENF, prosodic, glottal, and room-acoustic analysis...
+                                      {loadingMessage}
                                     </div>
                                   ) : null}
 
@@ -453,14 +494,14 @@ export default function AudioForensicsPage() {
                             <div className="space-y-6 xl:col-span-6 xl:sticky xl:top-28 xl:self-start">
                               <Card className="border border-white/10 p-8 text-center xl:h-[420px]" variant="secondary">
                                 <Card.Description className="text-xs uppercase tracking-[0.16em] text-white/45">
-                                  Authenticity Confidence (Higher = More Likely Real)
+                                  AI Voice Manipulation Risk
                                 </Card.Description>
                                 <Card.Content className="mt-6 flex h-full flex-col items-center justify-between gap-6">
                                   <div className="w-full max-w-[240px]">
                                     <div className="text-5xl font-semibold tracking-tight text-white">
-                                      {result ? `${authenticityPercent}%` : "--"}
+                                      {result ? `${aiLikelihoodPercent}%` : "--"}
                                     </div>
-                                    <ProgressBar aria-label="Audio authenticity score" value={result ? authenticityPercent : 0} size="sm" color={verdict?.tone || "warning"} className="mt-3 w-full">
+                                    <ProgressBar aria-label="Audio AI voice risk score" value={result ? aiLikelihoodPercent : 0} size="sm" color={verdict?.tone || "warning"} className="mt-3 w-full">
                                       <ProgressBar.Track>
                                         <ProgressBar.Fill />
                                       </ProgressBar.Track>
@@ -470,14 +511,15 @@ export default function AudioForensicsPage() {
                                     {verdict?.chipLabel || "Awaiting Analysis"}
                                   </Chip>
                                   <div className="w-full space-y-2 text-left text-sm text-white/65">
-                                    <div className="flex justify-between"><span>AI Voice Likelihood</span><span>{result ? `${aiLikelihoodPercent}%` : "-"}</span></div>
+                                    <div className="flex justify-between"><span>Authenticity</span><span>{result ? `${authenticityPercent}%` : "-"}</span></div>
                                     <div className="flex justify-between"><span>Confidence</span><span>{result ? `${confidencePercent}%` : "-"}</span></div>
                                     <div className="flex justify-between"><span>Latency</span><span>{formatLatency(result)}</span></div>
                                     <div className="flex justify-between"><span>Sample Rate</span><span>{result ? `${(result.sample_rate_hz / 1000).toFixed(1)}kHz` : "-"}</span></div>
+                                    <div className="flex justify-between"><span>Report ID</span><span className="font-mono text-xs">{reportId || "-"}</span></div>
                                   </div>
-                                  <Button className="mt-3 w-full rounded-full" variant="outline">
-                                    Generate Forensic Report
-                                  </Button>
+                                  <div className="mt-3 w-full rounded-full border border-white/15 bg-white/5 px-4 py-3 text-center text-sm text-white/70">
+                                    {reportId ? "Verification ID ready for export workflows" : "Verification ID will appear after analysis"}
+                                  </div>
                                 </Card.Content>
                               </Card>
 
@@ -578,27 +620,6 @@ export default function AudioForensicsPage() {
                                 </Card.Content>
                               </Card>
                             ))}
-                          </section>
-                        </ScrollReveal>
-
-                        <ScrollReveal delayMs={100}>
-                          <section className="mx-auto mt-8 w-full max-w-xl">
-                            <Card className="border border-white/10 p-5" variant="secondary">
-                              <Card.Content className="flex items-start gap-3">
-                                <Avatar>
-                                  <Avatar.Image alt="Forensic analyst" src="https://img.heroui.chat/image/avatar?w=120&h=120&u=47" />
-                                  <Avatar.Fallback>AT</Avatar.Fallback>
-                                </Avatar>
-                                <div>
-                                  <p className="text-xs italic text-white/60">
-                                    {verdict?.summary || "Upload audio to generate a forensic verdict with explainable signals."}
-                                  </p>
-                                  <p className="mt-2 text-[10px] uppercase tracking-widest text-white/45">
-                                    — Dr. Aris Thorne, Forensic Lead
-                                  </p>
-                                </div>
-                              </Card.Content>
-                            </Card>
                           </section>
                         </ScrollReveal>
                       </main>

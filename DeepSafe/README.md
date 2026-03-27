@@ -18,7 +18,7 @@
     Open `http://localhost:8888` in your browser.
 
 4.  **API Documentation**:
-    Visit `http://localhost:8000/docs` for the interactive Swagger UI.
+    Visit `http://localhost:8001/docs` for the interactive Swagger UI.
 
 ## 📦 Available Models
 

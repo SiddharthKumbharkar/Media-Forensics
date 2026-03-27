@@ -13,8 +13,16 @@ import {
   toPercent,
 } from "@/lib/video-forensics/presentation";
 import type { VideoForensicsResult } from "@/lib/video-forensics/types";
+import { useLoadingMessages } from "@/hooks/use-loading-messages";
 
 const SUPPORTED_VIDEO_EXTENSIONS = new Set([".mp4", ".m4v", ".mov", ".avi", ".mkv"]);
+const VIDEO_LOADING_MESSAGES = [
+  "Uploading video to DeepSafe...",
+  "Sampling frames and facial regions...",
+  "Running ensemble deepfake models...",
+  "Aggregating model confidence traces...",
+  "Preparing verification summary...",
+];
 
 function getFileExtension(filename: string | undefined): string {
   if (!filename) return "";
@@ -34,6 +42,7 @@ export default function VideoForensicsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [result, setResult] = useState<VideoForensicsResult | null>(null);
+  const loadingMessage = useLoadingMessages(isLoading, VIDEO_LOADING_MESSAGES);
 
   useEffect(
     () => () => {
@@ -63,10 +72,7 @@ export default function VideoForensicsPage() {
     inputRef.current?.click();
   };
 
-  const handleVideoPick = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
+  const processFile = async (file: File, inputElement?: HTMLInputElement) => {
     if (!isSupportedVideo(file)) {
       setErrorMessage("Unsupported format. Please upload MP4, M4V, MOV, AVI, or MKV.");
       return;
@@ -88,8 +94,23 @@ export default function VideoForensicsPage() {
       setErrorMessage(error instanceof Error ? error.message : "Video analysis failed");
     } finally {
       setIsLoading(false);
-      event.target.value = "";
+      if (inputElement) inputElement.value = "";
     }
+  };
+
+  const handleVideoPick = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) processFile(file, event.target);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (file) processFile(file);
   };
 
   return (
@@ -107,12 +128,31 @@ export default function VideoForensicsPage() {
               Ensemble deepfake inference with temporal signal extraction, model-level voting,
               and confidence diagnostics from live backend analysis.
             </p>
+            {result && !isLoading && (
+              <div className="mt-6 no-print">
+                  <Button 
+                    variant="outline" 
+                    className="rounded-full border-white/20 bg-white/5 !text-white hover:bg-white/10"
+                    onPress={() => window.print()}
+                >
+                  <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Print / Save Report
+                </Button>
+              </div>
+            )}
           </section>
         </ScrollReveal>
 
         <ScrollReveal delayMs={40}>
           <section className="mb-20">
-            <Card className="liquid-glass mx-auto w-full max-w-4xl border border-dashed border-white/20 p-6 text-center sm:p-8 md:p-10" variant="secondary">
+            <Card 
+              className="liquid-glass mx-auto w-full max-w-4xl border border-dashed border-white/20 p-6 text-center sm:p-8 md:p-10 transition-colors hover:border-white/40" 
+              variant="secondary"
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+            >
               <Card.Header className="items-center gap-3">
                 <Card.Title className="text-xl text-white sm:text-2xl">Drag &amp; Drop the video</Card.Title>
                 <Card.Description className="text-white/60">Supported formats: MP4, M4V, MOV, AVI, MKV</Card.Description>
@@ -126,7 +166,7 @@ export default function VideoForensicsPage() {
                   onChange={handleVideoPick}
                 />
                 <Button size="lg" className="rounded-full px-10" onPress={handleUploadClick} isDisabled={isLoading}>
-                  {isLoading ? "Analyzing..." : "Upload Video"}
+                  {isLoading ? loadingMessage : "Upload Video"}
                 </Button>
                 <Chip size="sm" variant="secondary">
                   {selectedFileName || "No file selected"}
@@ -147,9 +187,9 @@ export default function VideoForensicsPage() {
 
                   {isLoading ? (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/45">
-                      <div className="flex items-center gap-3 rounded-full border border-white/20 bg-black/60 px-4 py-2 text-white">
-                        <Spinner size="sm" />
-                        <span className="text-sm">Running Video Forensics on your video...</span>
+                      <div className="flex flex-col items-center gap-3 rounded-2xl border border-white/20 bg-black/60 px-6 py-4 text-white">
+                        <Spinner size="md" color="accent" />
+                        <span className="text-sm font-medium">{loadingMessage}</span>
                       </div>
                     </div>
                   ) : null}
@@ -182,10 +222,10 @@ export default function VideoForensicsPage() {
               <Card className="border border-white/10 p-6" variant="secondary">
                 <Card.Content className="flex items-center gap-6">
                   <div className="flex min-w-[130px] flex-col items-center gap-2">
-                    <div className="text-4xl font-semibold tracking-tight text-white">{result ? `${authenticityPercent}%` : "--"}</div>
+                    <div className="text-4xl font-semibold tracking-tight text-white">{result ? `${fakeProbabilityPercent}%` : "--"}</div>
                     <ProgressBar
                       aria-label="Video authenticity score"
-                      value={result ? authenticityPercent : 0}
+                      value={result ? fakeProbabilityPercent : 0}
                       size="sm"
                       color={verdict?.tone || "warning"}
                       className="w-full"
@@ -196,7 +236,7 @@ export default function VideoForensicsPage() {
                     </ProgressBar>
                   </div>
                   <div>
-                    <p className="text-xs uppercase tracking-[0.18em] text-white/45">Authenticity Confidence</p>
+                    <p className="text-xs uppercase tracking-[0.18em] text-white/45">AI/Deepfake Risk Score</p>
                     <div className="mt-1 flex items-center gap-2">
                       <p className="text-3xl italic text-white">{verdict?.label || "Awaiting Upload"}</p>
                       {verdict ? (
@@ -205,7 +245,13 @@ export default function VideoForensicsPage() {
                         </Chip>
                       ) : null}
                     </div>
-                    {result ? <p className="mt-1 text-xs text-white/55">Deepfake probability: {fakeProbabilityPercent}%</p> : null}
+                    {result ? (
+                      <>
+                        <p className="mt-1 text-xs text-white/70">
+                          Authenticity: {authenticityPercent}%
+                        </p>
+                      </>
+                    ) : null}
                     <p className="mt-2 text-xs text-white/60">
                       {verdict?.summary || "Upload a video to run DeepSafe ensemble analysis."}
                     </p>
