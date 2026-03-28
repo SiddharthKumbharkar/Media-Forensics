@@ -1,11 +1,12 @@
-import { isLayer1Output, type Layer1Output } from "@/lib/image-forensics/types";
+import { isAnalysisResponse, type AnalysisResponse } from "@/lib/analysis/types";
 import { forensicFetch } from "@/lib/api-client";
 
-export async function analyzeImageFile(file: File): Promise<Layer1Output> {
+export async function analyzeImageFile(file: File): Promise<AnalysisResponse> {
   return forensicFetch(
-    "/api/image-forensics",
+    "/api/analyze",
     file,
-    isLayer1Output,
-    "Image analysis failed"
+    isAnalysisResponse,
+    "Image analysis failed",
+    "image",
   );
 }

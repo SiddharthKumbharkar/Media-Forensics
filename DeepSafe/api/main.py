@@ -20,6 +20,7 @@ import os
 import time
 import requests
 import logging
+import base64
 from typing import Dict, Any, List, Optional, Union, Tuple
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Request, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -1194,12 +1195,21 @@ async def detect_media_endpoint_api_form(
         with open(shared_file_path, "wb") as shared_f:
             shared_f.write(file_contents)
 
+        encoded_media_content = base64.b64encode(file_contents).decode("utf-8")
+        payload_key_for_media = MEDIA_TYPE_PAYLOAD_KEYS.get(inferred_media_type)
+        if not payload_key_for_media:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Internal payload mapping missing for media type '{inferred_media_type}'.",
+            )
+
         predict_payload_data = {
             "media_type": inferred_media_type,
             "threshold": final_threshold,
             "ensemble_method": final_ensemble_method,
             "models": parsed_models_list,
             "file_path": shared_file_path,
+            payload_key_for_media: encoded_media_content,
         }
 
         predict_input_object = PredictInput(**predict_payload_data)

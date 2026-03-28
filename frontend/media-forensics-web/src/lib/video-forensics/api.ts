@@ -1,11 +1,12 @@
-import { isVideoForensicsResult, type VideoForensicsResult } from "@/lib/video-forensics/types";
+import { isAnalysisResponse, type AnalysisResponse } from "@/lib/analysis/types";
 import { forensicFetch } from "@/lib/api-client";
 
-export async function analyzeVideoFile(file: File): Promise<VideoForensicsResult> {
+export async function analyzeVideoFile(file: File): Promise<AnalysisResponse> {
   return forensicFetch(
-    "/api/video-forensics",
+    "/api/analyze",
     file,
-    isVideoForensicsResult,
-    "Video analysis failed"
+    isAnalysisResponse,
+    "Video analysis failed",
+    "video",
   );
 }

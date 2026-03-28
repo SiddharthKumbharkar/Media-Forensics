@@ -8,17 +8,17 @@ import { ScrollReveal } from "@/components/scroll-reveal";
 const analyzers = [
   {
     title: "Video Forensics",
-    description: "Deepfake probability, model consensus, and timeline-level confidence mapping.",
+    description: "Unified AI risk scoring, confidence, and verdicts for uploaded videos.",
     href: "/video-forensics",
   },
   {
     title: "Image Forensics",
-    description: "Unified authenticity score from EXIF, C2PA, PRNU, steganography, and ML detection.",
+    description: "Unified AI risk scoring, confidence, and verdicts for uploaded images.",
     href: "/image-forensics",
   },
   {
     title: "Audio Forensics",
-    description: "ENF, prosodic, glottal, and room-acoustic checks for speech authenticity.",
+    description: "Unified AI risk scoring, confidence, and verdicts for uploaded audio.",
     href: "/audio-forensics",
   },
 ];
@@ -36,7 +36,7 @@ export default function RunPage() {
               Run Media Analysis
             </h1>
             <p className="mx-auto max-w-3xl text-base text-white/70 sm:text-lg">
-              Choose a forensic pipeline and start analysis.
+              Choose a media type and run a normalized analysis workflow.
             </p>
           </section>
         </ScrollReveal>

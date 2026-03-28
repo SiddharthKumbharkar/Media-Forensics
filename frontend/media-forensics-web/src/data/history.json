@@ -1,6 +1,247 @@
 {
   "records": [
     {
+      "id": 1774683185863,
+      "request_id": "a75817df-a28f-40ad-ac08-acb4716a9a5b",
+      "media_type": "audio",
+      "verdict": "Likely Real",
+      "confidence": 0.8155274367056129,
+      "timestamp": "2026-03-28T07:33:05.850Z",
+      "raw": {
+        "media_type": "audio",
+        "verdict": "Likely Real",
+        "confidence": 0.8155274367056129,
+        "request_id": "a75817df-a28f-40ad-ac08-acb4716a9a5b",
+        "result": {
+          "request_id": "a75817df-a28f-40ad-ac08-acb4716a9a5b",
+          "media_type": "audio",
+          "source": "external",
+          "mode_requested": "external",
+          "mode_used": "external",
+          "analysis_engine": "Enhanced",
+          "fake_probability": 0.18447256329438713,
+          "final_score": 0.18447256329438713,
+          "final_verdict": "Likely Real",
+          "confidence": 0.8155274367056129,
+          "uncertainty_score": 0.1844725632943871,
+          "processing_ms": 3755,
+          "cached": false
+        },
+        "timestamp": "2026-03-28T07:33:05.850Z"
+      }
+    },
+    {
+      "id": 1774683126620,
+      "request_id": "3dcd3e2d-6205-4597-9093-27f87a764474",
+      "media_type": "audio",
+      "verdict": "Likely AI",
+      "confidence": 0.9914235662928259,
+      "timestamp": "2026-03-28T07:32:06.610Z",
+      "raw": {
+        "media_type": "audio",
+        "verdict": "Likely AI",
+        "confidence": 0.9914235662928259,
+        "request_id": "3dcd3e2d-6205-4597-9093-27f87a764474",
+        "result": {
+          "request_id": "3dcd3e2d-6205-4597-9093-27f87a764474",
+          "media_type": "audio",
+          "source": "external",
+          "mode_requested": "external",
+          "mode_used": "external",
+          "analysis_engine": "Enhanced",
+          "fake_probability": 0.9914235662928259,
+          "final_score": 0.9914235662928259,
+          "final_verdict": "Likely AI",
+          "confidence": 0.9914235662928259,
+          "uncertainty_score": 0.008576433707174091,
+          "processing_ms": 15009,
+          "cached": false
+        },
+        "timestamp": "2026-03-28T07:32:06.610Z"
+      }
+    },
+    {
+      "id": 1774683088542,
+      "request_id": "2a76c2f9-3baf-4ff1-883e-b3f5d39d62a6",
+      "media_type": "image",
+      "verdict": "Likely AI",
+      "confidence": 0.9999972581863403,
+      "timestamp": "2026-03-28T07:31:28.530Z",
+      "raw": {
+        "media_type": "image",
+        "verdict": "Likely AI",
+        "confidence": 0.9999972581863403,
+        "request_id": "2a76c2f9-3baf-4ff1-883e-b3f5d39d62a6",
+        "result": {
+          "request_id": "2a76c2f9-3baf-4ff1-883e-b3f5d39d62a6",
+          "media_type": "image",
+          "source": "external",
+          "mode_requested": "external",
+          "mode_used": "external",
+          "analysis_engine": "Enhanced",
+          "fake_probability": 0.9999972581863403,
+          "final_score": 0.9999972581863403,
+          "final_verdict": "Likely AI",
+          "confidence": 0.9999972581863403,
+          "uncertainty_score": 0.0000027418136596679688,
+          "processing_ms": 8951,
+          "cached": false
+        },
+        "timestamp": "2026-03-28T07:31:28.530Z"
+      }
+    },
+    {
+      "id": 1774683032772,
+      "request_id": "1dfcb245-2618-4f45-841d-4dd0751a4203",
+      "media_type": "image",
+      "verdict": "Likely Real",
+      "confidence": 0.9940140433609486,
+      "timestamp": "2026-03-28T07:30:32.763Z",
+      "raw": {
+        "media_type": "image",
+        "verdict": "Likely Real",
+        "confidence": 0.9940140433609486,
+        "request_id": "1dfcb245-2618-4f45-841d-4dd0751a4203",
+        "result": {
+          "request_id": "1dfcb245-2618-4f45-841d-4dd0751a4203",
+          "media_type": "image",
+          "source": "external",
+          "mode_requested": "external",
+          "mode_used": "external",
+          "analysis_engine": "Enhanced",
+          "fake_probability": 0.005985956639051437,
+          "final_score": 0.005985956639051437,
+          "final_verdict": "Likely Real",
+          "confidence": 0.9940140433609486,
+          "uncertainty_score": 0.005985956639051437,
+          "processing_ms": 47534,
+          "cached": false
+        },
+        "timestamp": "2026-03-28T07:30:32.763Z"
+      }
+    },
+    {
+      "id": 1774682975287,
+      "request_id": "24468952-e015-4169-8560-e44226c50aec",
+      "media_type": "video",
+      "verdict": "Likely Real",
+      "confidence": 1,
+      "timestamp": "2026-03-28T07:29:35.174Z",
+      "raw": {
+        "media_type": "video",
+        "verdict": "Likely Real",
+        "confidence": 1,
+        "request_id": "24468952-e015-4169-8560-e44226c50aec",
+        "result": {
+          "request_id": "24468952-e015-4169-8560-e44226c50aec",
+          "media_type": "video",
+          "source": "internal",
+          "mode_requested": "external",
+          "mode_used": "internal",
+          "analysis_engine": "Standard",
+          "fake_probability": 0,
+          "final_score": 0,
+          "final_verdict": "Likely Real",
+          "confidence": 1,
+          "uncertainty_score": 0,
+          "processing_ms": 172432,
+          "cached": false,
+          "fallback_applied": true
+        },
+        "timestamp": "2026-03-28T07:29:35.174Z"
+      }
+    },
+    {
+      "id": 1774682021137,
+      "request_id": "6cb131d9-42cb-42c7-86ae-9c3759e49ad8",
+      "media_type": "video",
+      "verdict": "Review Required",
+      "confidence": 0.7190723013438658,
+      "timestamp": "2026-03-28T07:13:41.123Z",
+      "raw": {
+        "media_type": "video",
+        "verdict": "Review Required",
+        "confidence": 0.7190723013438658,
+        "request_id": "6cb131d9-42cb-42c7-86ae-9c3759e49ad8",
+        "result": {
+          "request_id": "6cb131d9-42cb-42c7-86ae-9c3759e49ad8",
+          "media_type": "video",
+          "source": "external",
+          "mode_requested": "external",
+          "mode_used": "external",
+          "analysis_engine": "Enhanced",
+          "fake_probability": 0.28092769865613426,
+          "final_score": 0.28092769865613426,
+          "final_verdict": "Review Required",
+          "confidence": 0.7190723013438658,
+          "uncertainty_score": 0.2809276986561342,
+          "processing_ms": 35931,
+          "cached": false
+        },
+        "timestamp": "2026-03-28T07:13:41.123Z"
+      }
+    },
+    {
+      "id": 1774681950213,
+      "request_id": "b1ee424f-7a46-474a-bf7c-f42590a54ed4",
+      "media_type": "image",
+      "verdict": "Likely Real",
+      "confidence": 0.9991684535634704,
+      "timestamp": "2026-03-28T07:12:30.200Z",
+      "raw": {
+        "media_type": "image",
+        "verdict": "Likely Real",
+        "confidence": 0.9991684535634704,
+        "request_id": "b1ee424f-7a46-474a-bf7c-f42590a54ed4",
+        "result": {
+          "request_id": "b1ee424f-7a46-474a-bf7c-f42590a54ed4",
+          "media_type": "image",
+          "source": "external",
+          "mode_requested": "external",
+          "mode_used": "external",
+          "analysis_engine": "Enhanced",
+          "fake_probability": 0.0008315464365296066,
+          "final_score": 0.0008315464365296066,
+          "final_verdict": "Likely Real",
+          "confidence": 0.9991684535634704,
+          "uncertainty_score": 0.0008315464365296066,
+          "processing_ms": 8814,
+          "cached": false
+        },
+        "timestamp": "2026-03-28T07:12:30.200Z"
+      }
+    },
+    {
+      "id": 1774681913293,
+      "request_id": "4d5c29d6-0779-4ac7-ab6d-9db4f0f77780",
+      "media_type": "image",
+      "verdict": "Likely Real",
+      "confidence": 0.9997360522102099,
+      "timestamp": "2026-03-28T07:11:53.218Z",
+      "raw": {
+        "media_type": "image",
+        "verdict": "Likely Real",
+        "confidence": 0.9997360522102099,
+        "request_id": "4d5c29d6-0779-4ac7-ab6d-9db4f0f77780",
+        "result": {
+          "request_id": "4d5c29d6-0779-4ac7-ab6d-9db4f0f77780",
+          "media_type": "image",
+          "source": "external",
+          "mode_requested": "external",
+          "mode_used": "external",
+          "analysis_engine": "Enhanced",
+          "fake_probability": 0.0002639477897901088,
+          "final_score": 0.0002639477897901088,
+          "final_verdict": "Likely Real",
+          "confidence": 0.9997360522102099,
+          "uncertainty_score": 0.0002639477897901088,
+          "processing_ms": 5765,
+          "cached": false
+        },
+        "timestamp": "2026-03-28T07:11:53.218Z"
+      }
+    },
+    {
       "id": 1774611982404,
       "request_id": "ima_00f0192af390",
       "media_type": "image",

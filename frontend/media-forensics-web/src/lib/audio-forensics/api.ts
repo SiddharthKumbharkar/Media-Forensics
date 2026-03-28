@@ -1,11 +1,12 @@
-import { isAudioForensicsResult, type AudioForensicsResult } from "@/lib/audio-forensics/types";
+import { isAnalysisResponse, type AnalysisResponse } from "@/lib/analysis/types";
 import { forensicFetch } from "@/lib/api-client";
 
-export async function analyzeAudioFile(file: File): Promise<AudioForensicsResult> {
+export async function analyzeAudioFile(file: File): Promise<AnalysisResponse> {
   return forensicFetch(
-    "/api/audio-forensics",
+    "/api/analyze",
     file,
-    isAudioForensicsResult,
-    "Audio analysis failed"
+    isAnalysisResponse,
+    "Audio analysis failed",
+    "audio",
   );
 }

@@ -1,5 +1,7 @@
 "use client";
 
+import type { MediaType } from "@/lib/analysis/types";
+
 interface ErrorPayload {
   detail?: string;
   message?: string;
@@ -19,10 +21,14 @@ export async function forensicFetch<T>(
   url: string, 
   file: File, 
   validator: (data: unknown) => data is T,
-  defaultError: string
+  defaultError: string,
+  mediaType?: MediaType,
 ): Promise<T> {
   const formData = new FormData();
   formData.append("file", file);
+  if (mediaType) {
+    formData.append("mediaType", mediaType);
+  }
 
   const response = await fetch(url, {
     method: "POST",
@@ -35,7 +41,7 @@ export async function forensicFetch<T>(
 
   const payload: unknown = await response.json();
   if (!validator(payload)) {
-    throw new Error("Unexpected backend response format");
+    throw new Error("Unexpected analysis response format");
   }
 
   return payload;
